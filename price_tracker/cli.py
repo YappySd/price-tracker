@@ -17,12 +17,22 @@ from .storage import Storage
 DEFAULT_URL = "https://books.toscrape.com/index.html"
 
 
+# Titles come from someone else's website. Excel would run a cell starting with one of these
+# as a formula, so such text is written with a leading apostrophe.
+FORMULA_START = ("=", "+", "-", "@", chr(9), chr(13))  # chr(9) = tab, chr(13) = carriage return
+
+
+def excel_safe(value: object) -> str:
+    text = str(value)
+    return "'" + text if text.startswith(FORMULA_START) else text
+
+
 def write_csv(items: list[Item], path: Path) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(["title", "price", "in_stock", "url"])
         for item in items:
-            writer.writerow([item.title, item.price, int(item.in_stock), item.url])
+            writer.writerow([excel_safe(item.title), item.price, int(item.in_stock), excel_safe(item.url)])
 
 
 def build_parser() -> argparse.ArgumentParser:
